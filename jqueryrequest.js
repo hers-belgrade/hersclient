@@ -1,7 +1,7 @@
-Request = function (schema,address,port,command,data,cb,errcb,downcb){
+Request = function (schema,address,port,command, rq_method, data,cb,errcb,downcb){
 	///TODO: INTRODUCE SOME MORE CONFIG DATA, like request type?
   jQuery.ajax({
-    type:'POST',
+    type: rq_method || 'POST',
     url:schema+'://'+address+':'+port+command,
     data:data,
     dataType:'json',

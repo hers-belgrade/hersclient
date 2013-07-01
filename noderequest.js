@@ -3,12 +3,12 @@ var schemas = {
 	'http'  : require('http')
 }
 
-Request = function (schema, address, port, command, data, cb, errcb, downcb) {
+Request = function (schema, address, port, command, rq_method, data, cb, errcb, downcb) {
 	var options = {
 		hostname: address,
 		port: port,
 		path: command,
-		method:'GET'
+		method: rq_method || 'POST'
 	};
 
 	if ('function' !== typeof(errcb)) errcb = function () {}
