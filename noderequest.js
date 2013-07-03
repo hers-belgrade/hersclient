@@ -1,36 +1,42 @@
+var querystring = require('querystring');
+var request = require('request');
 var schemas = {
 	'https' : require('https'),
 	'http'  : require('http')
 }
 
 Request = function (schema, address, port, command, rq_method, data, cb, errcb, downcb) {
-	var options = {
-		hostname: address,
-		port: port,
-		path: command,
-		method: rq_method || 'POST'
-	};
 
-	if ('function' !== typeof(errcb)) errcb = function () {}
-	if ('function' !== typeof(downcb))downcb= function () {}
-	var s = schemas[schema];
-	if (!s) {
-		throw "Invalid schema "+schema;
-		return;
+	rq_method = (rq_method || 'POST').toUpperCase();
+	var url = '';
+	url += (schema || 'http');
+	url += '://';
+	url += (address || 'localhost');
+	url += (':'+(port || 80));
+	if (command && command.length) {
+		if (command.charAt(0) != '/') command = '/'+command;
+		url += command;
 	}
 
-	var req = s.request (options, function (res) {
-		var status_code = res.statusCode;
-		var data = '';
-		res.on('data', function (chunk) { data+=chunk; });
-		res.on('end' , function () { if ('function' === typeof(cb)) cb(data); });
-		res.on('close', downcb);
+	var setup = {
+		url : url,
+		method : rq_method
+	}
+
+	if ('function' !== typeof(errcb)) errcb = function () {console.log(arguments)}
+	if ('function' !== typeof(downcb))downcb= function () {console.log(arguments)}
+
+	if ('POST' === rq_method) setup.json = data;
+	if ('GET'  === rq_method) setup.qs = data;
+
+	request(setup, function (error, res, body) {
+		if (error) return errcb(error);
+		if (res.statusCode && res.statusCode != 200) return errcb (parseInt(res.statusCode), body);
+		try {
+			body = JSON.parse(body);
+		}catch (e) {}
+		cb(body);
 	});
-
-
-	//If any error is encountered during the request (be that with DNS resolution, TCP level errors, or actual HTTP parse errors)  ,... pretpostavljam da bih tu morao da uvalim i downcb
-	req.on('error', function (e) {errcb(e.message);});
-	req.end();
 }
 
 module.exports = {
