@@ -6,7 +6,7 @@
   "scripts": {
     "test": "make test"
   },
-	"dependecies" : {
+	"dependencies" : {
 		"request" : ">=2.21.0"
 	},
   "repository": {
