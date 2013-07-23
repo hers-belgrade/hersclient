@@ -4,10 +4,12 @@ Request = function (schema,address,port,command, rq_method, data,cb,errcb,downcb
     type: rq_method || 'POST',
     url:schema+'://'+address+':'+port+command,
     data:data,
-    dataType:'json',
+    //dataType:'json',
     success:function(data,textStatus,jqXHR){
       if(typeof cb==='function'){
-        cb(data);
+				try {
+        cb(JSON.parse(data));
+				}catch (e){};
       }
     },
 		error:function ( jqXHR, textStatus, errorThrown ) {
