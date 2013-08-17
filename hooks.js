@@ -66,6 +66,6 @@ HookCollection.prototype.fireAndForget = function(){
     }
   }
 	this.collection = {};
-}
+};
 
-module.exports=HookCollection
+module.exports=HookCollection;
