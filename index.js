@@ -94,5 +94,9 @@ function codeOf(modulename){
 module.exports = {
   Teller:m.theClass,
   codeOf:codeOf,
-	noderequest : noderequest
+	noderequest : noderequest,
+	HTTP_LongPollClient : require ('./http_client').HTTP_LongPollClient,
+	//LongPollBuffer : require('./LPBuffer').LongPollBuffer, ///TODO: seems to me that this one is not used at all
+	LongPollConsumer:require('./LPConsumer').LPConsumer,
+	HTTPLongPollDataCopy : require('./http_longpoll_data_copy').HTTPLongPollDataCopy
 };
