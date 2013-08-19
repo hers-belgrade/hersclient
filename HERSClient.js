@@ -1,4 +1,4 @@
-HTTP_LongPollClient = function (url,id_params,cb_map) {
+HERSClient = function (url,id_params,cb_map) {
 	var self = this;
 	var url = url || {};
 
@@ -45,7 +45,7 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 		var command = '/';
 	
 		var old_sid_name = consumer.sid_name;	
-		var request = new Request (schema, address, port, command, method, data, function (resp) {
+		var request = Request (schema, address, port, command, method, data, function (resp) {
 			var bfr = consumer.buffer.length;
 			if (consumer.consume(resp)) {
 				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
@@ -81,15 +81,11 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 		var command = '/'+request;
 		data = data || {};
 		data[consumer.sid_name] = consumer.sid;
-		var request = new Request (schema, address, port, command, method, data, function (resp) {}, function () {
-			console.log(' ERROR CALL BACK .... STA SAD ?', arguments);
-		});
+		Request (schema, address, port, command, method, data); //response callback is irrelevant until proven otherwise
 	}
 
 	this.check ();
 	this.next = function () {return consumer.next();}
 }
 
-module.exports = {
-	HTTP_LongPollClient : HTTP_LongPollClient,
-}
+module.exports = HERSClient;

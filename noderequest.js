@@ -5,7 +5,7 @@ var schemas = {
 	'http'  : require('http')
 }
 
-Request = function (schema, address, port, command, rq_method, data, cb, errcb, downcb) {
+Request = function (schema, address, port, command, rq_method, data, cb, errcb) {
 
 	rq_method = (rq_method || 'POST').toUpperCase();
 	var url = '';
@@ -23,8 +23,8 @@ Request = function (schema, address, port, command, rq_method, data, cb, errcb, 
 		method : rq_method
 	}
 
-	if ('function' !== typeof(errcb)) errcb = function () {console.log(arguments)}
-	if ('function' !== typeof(downcb))downcb= function () {console.log(arguments)}
+	if ('function' !== typeof(cb)) cb = function () {console.log(arguments)};
+	if ('function' !== typeof(errcb)) errcb = function () {console.log(arguments)};
 
 	if ('POST' === rq_method) setup.json = data;
 	if ('GET'  === rq_method) setup.qs = data;
@@ -39,6 +39,4 @@ Request = function (schema, address, port, command, rq_method, data, cb, errcb, 
 	});
 }
 
-module.exports = {
-	Request : Request,
-}
+module.exports = Request;
