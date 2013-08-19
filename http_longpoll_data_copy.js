@@ -1,9 +1,6 @@
-var DC = require ('./datacopy');
-var HTTP_LongPollClient = require('./http_client').HTTP_LongPollClient;
-
 // stable version
 function HTTPLongPollDataCopy (url, cb_map) {
-	this.datacpy = new (DC.Collection)();
+	this.datacpy = new Collection();
 	var sbs = this.datacpy.subscribe_bunch(cb_map);
 	var self = this;
 

@@ -91,12 +91,19 @@ function codeOf(modulename){
   return p ? fs.readFileSync(p,'utf8') : '';
 }
 
+var HTTP_LongPollClient = require('./http_client').HTTP_LongPollClient;
+var DC = require('./datacopy');
+var Collection = DC.Collection;
+
+eval(codeOf('./http_longpoll_data_copy'));
+
+
 module.exports = {
   Teller:m.theClass,
   codeOf:codeOf,
 	noderequest : noderequest,
-	HTTP_LongPollClient : require ('./http_client').HTTP_LongPollClient,
-	//LongPollBuffer : require('./LPBuffer').LongPollBuffer, ///TODO: seems to me that this one is not used at all
+	HTTP_LongPollClient : HTTP_LongPollClient,
 	LongPollConsumer:require('./LPConsumer').LPConsumer,
-	HTTPLongPollDataCopy : require('./http_longpoll_data_copy').HTTPLongPollDataCopy
+	HTTPLongPollDataCopy : HTTPLongPollDataCopy,
+	DataCopy : DC
 };
