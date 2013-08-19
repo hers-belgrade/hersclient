@@ -40,6 +40,4 @@ LongPollConsumer.prototype.consume = function (update) {
 
 LongPollConsumer.prototype.next = function () {return (this.buffer.length)?this.buffer.shift():undefined;}
 
-module.exports = {
-	LongPollConsumer : LongPollConsumer
-}
+module.exports = LongPollConsumer;

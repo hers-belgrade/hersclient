@@ -117,7 +117,7 @@ function Collection (){
 			c_parent.set(name, d);
 			execute_transaction_handler('set', op, d);
 			affected_paths && affected_paths.push(op);
-			check_on_predefined('set', op, d);
+			check_on_filters('set', op, d);
 		},
 		'remove' : function (p) {
 			var prnt = this;
@@ -132,7 +132,7 @@ function Collection (){
 			prnt.remove(name);
 			execute_transaction_handler('remove', p);
 			affected_paths && affected_paths.push(p);
-			check_on_predefined('remove', p);
+			check_on_filters('remove', p);
 		},
 		'start' : function (n) {
 			this.start(n);
@@ -193,7 +193,7 @@ function Collection (){
 		for (var i in th) ('function' === typeof((th[i] || {})[primitive])) && th[i][primitive](name,data);
 	}
 
-	function check_on_predefined (primitive, path, data) {
+	function check_on_filters (primitive, path, data) {
 		for (var i in path_filters) {
 			if (!path_filters[i] || !path_filters[i].filter || 'function' !== typeof(path_filters[i].cb)) continue;
 			var ret = path_filters[i].filter.test(primitive, path);
