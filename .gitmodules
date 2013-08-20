@@ -1,0 +1,3 @@
+[submodule "hersutils"]
+	path = hersutils
+	url = git@github.com:hers-belgrade/hersutils
