@@ -41,7 +41,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
     error_cnt = 0;
     error_reconnect_sec = 1;
     if (old_sidname && sidname != old_sidname) {
-      data.commit(['set',[],{}]);
+      data.reset();
     }
     var txn = resp.shift();
     var txnl = txn.length;

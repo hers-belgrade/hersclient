@@ -1,15 +1,22 @@
+function isObj (obj) {return (typeof(obj) === 'object');}
+function keyCount (obj) {
+  var ret = 0;
+  for (var i in obj) {
+    ret++;
+  }
+  return ret;
+}
+
 function Scalar () {
 	var data = undefined;
 
 	var changed = new HookCollection(); //will be fired only upon changes
-	var updated = new HookCollection(); //will be fired after every set
 
 	var destroyed = new HookCollection();
 
 	this.set = function (value) {
 		var old = data;
 		data = value;
-		updated.fire(old, value);
 		if (old != value) changed.fire(old,value);
 	};
 
@@ -22,7 +29,6 @@ function Scalar () {
 	this.value = function () {return data;}
   this.changed = changed;
   this.destroyed = destroyed;
-	this.updated = updated;
 }
 
 function Collection (){
@@ -33,7 +39,7 @@ function Collection (){
 
   var txnBegins = new HookCollection();
   var txnEnds = new HookCollection();
-	var reset = new HookCollection();
+	var destroyed = new HookCollection();
 
 	this.value = function () {
 		var ret = {};
@@ -60,60 +66,12 @@ function Collection (){
     return ret;
 	}
 
-	function isObj (obj) {return (typeof(obj) === 'object');}
-	function keyCount (obj) {
-		var ret = 0;
-		for (var i in obj) {
-			ret++;
-		}
-		return ret;
-	}
-	var actions = {
-		'set' : function (op, d) {
-			//console.log('===', op);
-			if (op.length == 0 && isObj(d) && keyCount(d) == 0) {
-				data = d;
-				reset.fire();
-				return;
-			}
-
-			var path = op.slice(0);
-			var c_parent = this;
-
-      while(path.length>1){
-        var pe = path.shift();
-				c_parent = c_parent.element(pe);
-				if (!c_parent) {
-          throw op+" is an invalid path";
-				}
-			}
-
-			var name = path.pop(); //or shift, doesn't matter, path is of length 1
-			c_parent.set(name, d);
-		},
-		'remove' : function (p) {
-			var prnt = this;
-			for (var i in p) {
-				var name = p[i];
-				if (i == p.length-1) break;
-				prnt = prnt.element(p[i]);
-				if (!prnt) {
-					return console.error('UNABLE TO FIND PATH ...');
-				}
-			}
-			prnt.remove(name);
-		},
-		'start' : function (n) {
-			this.start(n);
-		},
-		'end': function (n) {
-			this.end(n);
-		}
-	};
-
 	this.set = function (name, d) {
+    if(typeof name === 'undefined'){
+      return;
+    }
 		var entity = data[name];
-		var should_fire = !entity;
+		var fire_addition = !entity;
 
 		if ('object' === typeof(d)) {
 			if (entity && !(entity instanceof Collection)) {
@@ -121,34 +79,45 @@ function Collection (){
           elementRemoved(name,entity);
           entity.destroy();
         }
-				entity = undefined;
+				entity = null;
 			}
-			if (!entity) { entity = new Collection(); should_fire = true; }
+			if (!entity){
+        entity = new Collection();
+        fire_addition = true;
+      }else{
+        entity.reset();
+      }
 			for (var i in d) entity.set(i, d);
 		}else{
-
 			if (entity && !(entity instanceof Scalar)) {
 				if(entity instanceof Collection){
           elementRemoved(name,entity);
           entity.destroy(); 
         }
-				entity = undefined;
+				entity = null;
 			}
-			if (!entity) {entity = new Scalar(); should_fire = true;}
+			if (!entity) {entity = new Scalar(); fire_addition = true;}
 			entity.set(d);
 		}
 		data[name] = entity;
-		should_fire && elementAdded.fire(name, entity);
+		fire_addition && elementAdded.fire(name, entity);
 		return entity;
 	};
 
   this.remove = function (name){
-    if(typeof data[name] !== 'undefined'){
-      data[name].destroy();
+    var d = data[name];
+    if(typeof d !== 'undefined'){
+      elementRemoved.fire(name,d);
+      d.destroy();
       delete data[name];
-      elementRemoved.fire(name);
     }
   };
+
+  this.reset = function(){
+    for(var i in data){
+      this.remove(i);
+    }
+  }
 
   this.start = function(txnalias){
     txnBegins.fire(txnalias);
@@ -156,7 +125,6 @@ function Collection (){
 
   this.end = function(txnalias){
     txnEnds.fire(txnalias);
-		affected_paths = undefined;
   };
 
   this.destroy = function(){
@@ -166,10 +134,12 @@ function Collection (){
       elementRemoved.fire(i);
     }
     data = undefined;
+    destroyed.fire();
     elementAdded.destruct();
     elementRemoved.destruct();
     txnBegins.destruct();
     txnEnds.destruct();
+    destroyed.destruct();
   };
 
 	this.commit = function (txn) {
@@ -179,8 +149,9 @@ function Collection (){
 		}
 		try {
 			var action = txn.shift(), path = txn.shift(), data = (txn.length) ? txn.shift() : undefined;
-			if ('function' === typeof (actions[action])) {
-				actions[action].call(this,path, data);
+      var tf = this['perform_'+action];
+			if ('function' === typeof (tf)) {
+				tf.call(this,path, data);
 			}
 		}catch (e) {
 			console.log(e.stack);
@@ -192,8 +163,49 @@ function Collection (){
   this.elementRemoved = elementRemoved;
   this.txnBegins = txnBegins;
   this.txnEnds = txnEnds;
-	this.reset = reset;
+  this.destroyed = destroyed;
 };
+
+Collection.prototype.perform_set = function (op, d) {
+  var path = op.slice(0);
+  var c_parent = this;
+
+  while(path.length>1){
+    var pe = path.shift();
+    c_parent = c_parent.element(pe);
+    if (!c_parent) {
+      throw op+" is an invalid path on "+JSON.stringify(this.value());
+    }
+  }
+
+  var name = path.pop(); //or shift, doesn't matter, path is of length 1
+  c_parent.set(name, d);
+};
+
+Collection.prototype.perform_remove = function (p) {
+  var prnt = this;
+  var level = 0;
+  var name = '';
+  while(level<p.length-1){
+    name = p[i];
+    prnt = prnt.element(name);
+    if(!prnt){
+      throw p+' is an invalid path on '+JSON.stringify(this.value());
+    }
+  }
+  if(name){
+    prnt.remove(name);
+  }
+};
+
+Collection.prototype.perform_start = function (n) {
+  this.start(n);
+};
+
+Collection.prototype.perform_end = function (n) {
+  this.end(n);
+};
+
 
 Collection.prototype.subscribe_bunch = function (map) {
   var ret = {};
@@ -202,11 +214,7 @@ Collection.prototype.subscribe_bunch = function (map) {
   }
   return ret;
 };
-
-Collection.prototype.follow = function(path,creationcb,alterationcb,removalcb){
-};
-
 module.exports = {
 	Scalar : Scalar,
 	Collection: Collection
-}
+};
