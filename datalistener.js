@@ -1,22 +1,12 @@
-function removeEmptyElements(arry){
-  var i = 0;
-  while(i<arry.length){
-    if(typeof arry[i] !== 'undefined'){
-      i++;
-    }else{
-      arry.splice(i,1);
-    }
-  }
-};
-
 function handlerForScalar(scalar){
   scalar.changed.attach(bla);
 };
 
-function handlerForElementAdded(elementname,scalarhandler,collectionhandler){
+function handlerForElementAdded(elementname,scalarhandler,collectionhandler,destructionhandler){
   var name = elementname;
   var sh = scalarhandler;
   var ch = collectionhandler;
+  var dh = destructionhandler;
   return function(ename,entity){
     if(name==ename){
       if(entity.changed){//scalar
@@ -25,6 +15,7 @@ function handlerForElementAdded(elementname,scalarhandler,collectionhandler){
       if(entity.elementAdded){//collection
         ch(entity);
       }
+      entity.destroyed.attach(dh);
     }
   };
 };
@@ -45,30 +36,33 @@ function handleCollectionOnCollection(index,collection,collectionname,creationha
   },function(entity){
     entity.destroyed.attach(destructionhandler);
     creationhandler(entity,index+1);
-  }));
+  },destructionhandler));
   collection.elementRemoved.attach(handlerForElementRemoved(collectionname,removalhandler));
   var e = collection.element(collectionname);
   if(e){
-    console.log(collectionname,'exists');
     creationhandler(e,index+1);
     e.destroyed.attach(destructionhandler);
   }
 };
 
 function handleEntityOnCollection(index,collection,entityname,creationhandler,removalhandler){
-  collection.elementAdded.attach(handlerForElementAdded(entityname,creationhandler,creationhandler));
+  collection.elementAdded.attach(handlerForElementAdded(entityname,creationhandler,creationhandler,removalhandler));
   collection.elementRemoved.attach(handlerForElementRemoved(entityname,removalhandler));
   var e = collection.element(entityname);
   if(e){
     creationhandler(e,index+1);
+    e.destroyed.attach(removalhandler);
   }
 }
 
-function PathListener(collection,path,creationcb,destructioncb){
+function listenToDataPath(collection,path,creationcb,destructioncb){
   if(!collection){return;}
   var _path = path.slice();
   var _pl = _path.length;
-  if(!_pl){return;}
+  if(!_pl){
+    collection.destroyed.attach(destructioncb);
+    creationcb(collection);
+  }
   var handler = function(_ent,i){
     if(i+1<_pl){
       handleCollectionOnCollection(i,_ent,_path[i],function(entity,_ind){
@@ -84,4 +78,52 @@ function PathListener(collection,path,creationcb,destructioncb){
   handler(collection,0);
 };
 
-module.exports = PathListener;
+function listenToDataFields(collection,fieldnamearry,cb){
+  if(typeof cb !== 'function'){
+    return;
+  }
+  var _cb = cb;
+  var _coll = collection;
+  var fnh = {};
+  var ch = {};
+  function trytogo(){
+    for(var i in fnh){
+      if(typeof ch[i] === 'undefined'){
+        return false;
+      }
+    }
+    _cb(ch);
+  };
+  function set(fieldname,fieldval){
+    if(typeof fnh[fieldname] === 'undefined'){
+      return;
+    }
+    if(typeof fieldval === 'undefined'){
+      return;
+    }
+    ch[fieldname] = fieldval;
+    trytogo();
+  };
+  function unset(fieldname){
+    delete ch[fieldname];
+  };
+  for(var i in fieldnamearry){
+    var fn = fieldnamearry[i];
+    fnh[fn] = 1;
+    (function(index){
+      var _ch = ch;
+      var _set = set;
+      var _unset = unset;
+      listenToDataPath(_coll,[index],function(entity){
+        _set(index,entity);
+      },function(entity){
+        _unset(index);
+      });
+    })(fn);
+  }
+};
+
+module.exports = {
+  listenToDataPath:listenToDataPath,
+  listenToDataFields:listenToDataFields
+};

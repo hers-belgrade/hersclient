@@ -9,5 +9,5 @@ module.exports = {
   createClient : function(url,id_params,cb_map){
     return new c(new clctn(),url,id_params,cb_map);
   },
-  PathListener : pl
+  listenToDataPath : pl.listenToDataPath
 };

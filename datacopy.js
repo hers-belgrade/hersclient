@@ -21,8 +21,10 @@ function Scalar () {
 	};
 
   this.destroy = function(){
+    var mydata = data;
     data = undefined;
-    destroyed.fire();
+    changed.fire(mydata,undefined);
+    destroyed.fire(this);
     changed.destruct();
     destroyed.destruct();
   }
@@ -52,7 +54,18 @@ function Collection (){
 	this.element = function (path) {
 		var top_ = typeof(path);
 		if ('undefined'=== top_) return undefined;
-		if ('string' === top_) return data[path];
+		//if ('string' === top_) return path.length ? data[path] : this;
+		if ('string' === top_){
+      if(path.length){
+        var ret = data[path];
+        if(typeof ret === 'undefined'){
+          //console.log('no data for',path,'on',data);
+        }
+        return ret;
+      }else{
+        return this;
+      }
+    }
 		if ('number' === top_) return data[path];
 		if ('object' === top_ && !(path instanceof Array)) return undefined;
 
@@ -100,7 +113,9 @@ function Collection (){
 			entity.set(d);
 		}
 		data[name] = entity;
-		fire_addition && elementAdded.fire(name, entity);
+		if(fire_addition){
+      elementAdded.fire(name, entity);
+    }
 		return entity;
 	};
 
@@ -134,7 +149,7 @@ function Collection (){
       elementRemoved.fire(i);
     }
     data = undefined;
-    destroyed.fire();
+    destroyed.fire(this);
     elementAdded.destruct();
     elementRemoved.destruct();
     txnBegins.destruct();
@@ -174,7 +189,7 @@ Collection.prototype.perform_set = function (op, d) {
     var pe = path.shift();
     c_parent = c_parent.element(pe);
     if (!c_parent) {
-      throw op+" is an invalid path on "+JSON.stringify(this.value());
+      throw op+" is an invalid path on "+JSON.stringify(this.value())+' in setting '+pe;
     }
   }
 
@@ -183,16 +198,19 @@ Collection.prototype.perform_set = function (op, d) {
 };
 
 Collection.prototype.perform_remove = function (p) {
+  if(!((typeof p === 'object')&&(p instanceof Array))){return;}
   var prnt = this;
   var level = 0;
   var name = '';
   while(level<p.length-1){
-    name = p[i];
+    name = p[level];
     prnt = prnt.element(name);
     if(!prnt){
-      throw p+' is an invalid path on '+JSON.stringify(this.value());
+      throw p+' is an invalid path on '+JSON.stringify(this.value())+' in removing '+name;
     }
+    level++;
   }
+  name = p[level];
   if(name){
     prnt.remove(name);
   }
