@@ -78,6 +78,13 @@ function listenToDataPath(collection,path,creationcb,destructioncb){
   handler(collection,0);
 };
 
+function listenToCollectionField(collection,fieldname,creationcb,destructioncb,alterationcb){
+  if(!collection){return;}
+  collection.elementAdded.attach(function(name,entity){
+    creationcb.apply(selector(),arguments);
+  });
+};
+
 function listenToDataFields(collection,fieldnamearry,cb){
   if(typeof cb !== 'function'){
     return;
