@@ -81,6 +81,7 @@ function Collection (){
 
 	this.set = function (name, d) {
     if(typeof name === 'undefined'){
+      this.reset();
       return;
     }
 		var entity = data[name];
