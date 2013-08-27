@@ -9,5 +9,7 @@ module.exports = {
   createClient : function(url,id_params,cb_map){
     return new c(new clctn(),url,id_params,cb_map);
   },
-  listenToDataPath : pl.listenToDataPath
+  Collection : dc.Collection,
+  listenToCollectionField : pl.listenToCollectionField,
+  listenToDataFields: pl.listenToDataFields
 };
