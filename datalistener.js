@@ -53,11 +53,13 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
   }
 };
 
-function listenToDataFields(collection,fieldnamearry,cb){
+function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
   if(typeof cb !== 'function'){
     return;
   }
-  var _cb = cb;
+  if(!collection){return;}
+  var selector = (typeof sel_fn_or_obj === 'function') ? sel_fn_or_obj : (function(obj){var o = obj; return function(){return o;}})(sel_fn_or_obj);
+  var sf = dataFuncInvoker(selector,cb);
   var _coll = collection;
   var fnh = {};
   var ch = {};
@@ -67,7 +69,7 @@ function listenToDataFields(collection,fieldnamearry,cb){
         return false;
       }
     }
-    _cb(ch);
+    sf(ch);
   };
   function set(fieldname,fieldval){
     if(typeof fnh[fieldname] === 'undefined'){
