@@ -14,6 +14,7 @@ function dataFuncInvoker(selfunc,func){
 
 function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
   if(!collection){return;}
+  var ret = {};
   var selector = (typeof sel_fn_or_obj === 'function') ? sel_fn_or_obj : (function(obj){var o = obj; return function(){return o;}})(sel_fn_or_obj);
   if(!(behavior&&(behavior.activator||behavior.deactivator||behavior.setter))){
     return;
@@ -69,6 +70,7 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
         return false;
       }
     }
+    console.log('will go because',ch,'is ok with',fnh);
     sf(ch);
   };
   function set(fieldname,fieldval){
@@ -87,14 +89,19 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
   for(var i in fieldnamearry){
     var fn = fieldnamearry[i];
     fnh[fn] = 1;
+  }
+  for(var i in fieldnamearry){
+    var fn = fieldnamearry[i];
     (function(index){
       var _ch = ch;
       var _set = set;
       var _unset = unset;
       listenToCollectionField(null,_coll,index,{activator:function(entity){
-        _set(index,entity);
+        _set(index,entity.value());
       },deactivator:function(entity){
         _unset(index);
+      },setter:function(newval,oldval){
+        trytogo();
       }});
     })(fn);
   }

@@ -163,16 +163,12 @@ function Collection (){
 			console.error('IVALID TXN length ', txn);
 			return;
 		}
-		try {
-			var action = txn.shift(), path = txn.shift(), data = (txn.length) ? txn.shift() : undefined;
-      var tf = this['perform_'+action];
-			if ('function' === typeof (tf)) {
-				tf.call(this,path, data);
-			}
-		}catch (e) {
-			console.log(e.stack);
-			console.log('ERROR ',e,txn);
-		}
+    //console.log(txn);
+    var action = txn.shift(), path = txn.shift(), data = (txn.length) ? txn.shift() : undefined;
+    var tf = this['perform_'+action];
+    if ('function' === typeof (tf)) {
+      tf.call(this,path, data);
+    }
 	}
 
   this.elementAdded = elementAdded;
