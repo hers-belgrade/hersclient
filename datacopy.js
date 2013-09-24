@@ -140,6 +140,13 @@ function Collection (){
   };
 
   this.end = function(txnalias){
+    /*
+    for(var i in data){
+      if(data[i].txnEnds){
+        data[i].end(txnalias);
+      }
+    }
+    */
     txnEnds.fire(txnalias);
   };
 
@@ -185,6 +192,7 @@ function Collection (){
 Collection.prototype.perform_set = function (op, d) {
   var path = op.slice(0);
   var c_parent = this;
+  var affectedpath='';
 
   while(path.length>1){
     var pe = path.shift();
@@ -192,6 +200,8 @@ Collection.prototype.perform_set = function (op, d) {
     if (!c_parent) {
       throw op+" is an invalid path on "+JSON.stringify(this.value())+' in setting '+pe;
     }
+    affectedpath+=(pe+'/');
+    this.affected[affectedpath] = c_parent;
   }
 
   var name = path.pop(); //or shift, doesn't matter, path is of length 1
@@ -203,25 +213,35 @@ Collection.prototype.perform_remove = function (p) {
   var prnt = this;
   var level = 0;
   var name = '';
+  var affectedpath = '';
   while(level<p.length-1){
     name = p[level];
     prnt = prnt.element(name);
     if(!prnt){
       throw p+' is an invalid path on '+JSON.stringify(this.value())+' in removing '+name;
     }
+    affectedpath+=(name+'/');
     level++;
   }
   name = p[level];
   if(name){
     prnt.remove(name);
   }
+  if(affectedpath.length){
+    delete this.affected[affectedpath];
+  }
 };
 
 Collection.prototype.perform_start = function (n) {
+  this.affected = {};
   this.start(n);
 };
 
 Collection.prototype.perform_end = function (n) {
+  for(var i in this.affected){
+    this.affected[i].end(n);
+  }
+  delete this.affected;
   this.end(n);
 };
 

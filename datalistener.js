@@ -12,8 +12,23 @@ function dataFuncInvoker(selfunc,func){
   }
 };
 
+function Listener(){
+  this.attached = [];
+};
+Listener.prototype.add = function(source,listener){
+  this.attached.push({source:source,hook:source.attach(listener)});
+};
+Listener.prototype.release = function(){
+  for(var i in this.attached){
+    var a = this.attached[i];
+    a.source.detach(a.hook);
+  }
+  this.attached = [];
+};
+
 function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
-  if(!collection){return;}
+  var ret = new Listener();
+  if(!collection){return ret;}
   var selector = (typeof sel_fn_or_obj === 'function') ? sel_fn_or_obj : (function(obj){var o = obj; return function(){return o;}})(sel_fn_or_obj);
   if(!(behavior&&(behavior.activator||behavior.deactivator||behavior.setter))){
     return;
@@ -21,19 +36,19 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
   var act = (behavior.activator)?dataFuncInvoker(selector,behavior.activator):function(){};
   var deact = (behavior.deactivator)?dataFuncInvoker(selector,behavior.deactivator):function(){};
   var sf = (behavior.setter) ? dataFuncInvoker(selector,behavior.setter) : function(){};
-  collection.elementAdded.attach((function(fname){
-    var fn = fname;
+  ret.add(collection.elementAdded,(function(_listener,fname){
+    var listener=_listener,fn = fname;
     return function(name,entity){
       if(name===fn){
         act(entity);
         if(entity.changed){//scalar
           sf(entity.value());
-          entity.changed.attach(function(oldval,newval){sf(newval,oldval);});
+          listener.add(entity.changed,(function(oldval,newval){sf(newval,oldval);}));
         }
       }
-    }
-  })(fieldname));
-  collection.elementRemoved.attach((function(fname){
+    };
+  })(ret,fieldname));
+  ret.add(collection.elementRemoved,(function(fname){
     var fn = fname;
     return function(name,entity){
       if(name===fn){
@@ -47,13 +62,28 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
     act(e);
     if(e.changed){
       sf(e.value());
-      e.changed.attach(function(oldval,newval){sf(newval,oldval);});
+      ret.add(e.changed,function(oldval,newval){sf(newval,oldval);});
     }
-    e.destroyed.attach(deact);
+    ret.add(e.destroyed,deact);
   }
+  return ret;
+};
+
+function Listeners(){
+  this.collection = [];
+}
+Listeners.prototype.add = function(listener){
+  this.collection.push(listener);
+};
+Listeners.prototype.release = function(){
+  for(var i in this.collection){
+    this.collection[i].release();
+  }
+  this.collection=[];
 };
 
 function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
+  var ret = new Listeners();
   if(typeof cb !== 'function'){
     return;
   }
@@ -87,16 +117,17 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
   for(var i in fieldnamearry){
     var fn = fieldnamearry[i];
     fnh[fn] = 1;
-    (function(index){
+    (function(_listeners,index){
+      var listeners = _listeners;
       var _ch = ch;
       var _set = set;
       var _unset = unset;
-      listenToCollectionField(null,_coll,index,{activator:function(entity){
+      listeners.add(listenToCollectionField(null,_coll,index,{activator:function(entity){
         _set(index,entity);
       },deactivator:function(entity){
         _unset(index);
-      }});
-    })(fn);
+      }}));
+    })(ret,fn);
   }
 };
 

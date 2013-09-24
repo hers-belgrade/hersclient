@@ -18,7 +18,7 @@ angular.
     };
   }).
   factory('transfer', function($http,querize,url,datacopy,identity,sessionname,sessionvalue,maxattemptspertimeout,maxtimeout){
-    return function(queryobj,cb){
+    return function(command,queryobj,cb){
       var querystring = sessionname ? sessionname+'='+sessionvalue : '';
       querystring = querize(querystring,identity);
       querystring = querize(querystring,queryobj);
@@ -29,7 +29,7 @@ angular.
       timeout = 1;
       var worker = function(){
         //console.log('getting');
-        $http.get(url+querystring).
+        $http.get(url+command+querystring).
         success(function(data){
           for(var i in data[0]){
             sessionname = i;
@@ -58,9 +58,14 @@ angular.
   }).
   factory('go',function(transfer){
     return function(){
-      var cb = function(){transfer({},cb);};
+      var cb = function(){transfer('',{},cb);};
       cb();
-    }
+    };
+  }).
+  factory('do_command',function(transfer){
+    return function(command,paramobj,statuscb){
+      transfer(command,{paramobj:JSON.stringify(paramobj)},statuscb);
+    };
   }).
   factory('listen', function(){
     return function($http){
