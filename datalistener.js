@@ -99,6 +99,7 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
         return false;
       }
     }
+    console.log('will go because',ch,'is ok with',fnh);
     sf(ch);
   };
   function set(fieldname,fieldval){
@@ -123,9 +124,11 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
       var _set = set;
       var _unset = unset;
       listeners.add(listenToCollectionField(null,_coll,index,{activator:function(entity){
-        _set(index,entity);
+        _set(index,entity.value());
       },deactivator:function(entity){
         _unset(index);
+      },setter:function(newval,oldval){
+        trytogo();
       }}));
     })(ret,fn);
   }
