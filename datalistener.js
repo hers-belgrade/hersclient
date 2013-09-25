@@ -132,6 +132,7 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
       }}));
     })(ret,fn);
   }
+	return ret;
 };
 
 module.exports = {
