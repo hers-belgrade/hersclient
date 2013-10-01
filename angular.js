@@ -3,8 +3,7 @@ angular.
   constant('datacopy',new Collection()).
   constant('maxattemptspertimeout',5).
   constant('maxtimeout',3).
-  value('sessionname','').
-  value('sessionvalue','').
+  value('sessionobj',{}).
   value('identity',{}).
   factory('querize', function(){
     return function(querystring,queryobj){
@@ -17,30 +16,35 @@ angular.
       return querystring;
     };
   }).
-  factory('transfer', function($http,querize,url,datacopy,identity,sessionname,sessionvalue,maxattemptspertimeout,maxtimeout){
+  factory('transfer', function($http,url,datacopy,identity,sessionobj,maxattemptspertimeout,maxtimeout){
     return function(command,queryobj,cb){
-      var querystring = sessionname ? sessionname+'='+sessionvalue : '';
-      querystring = querize(querystring,identity);
-      querystring = querize(querystring,queryobj);
-      if(querystring.length){
-        querystring='?'+querystring;
-      }
       var attempts = 0;
+      if(sessionobj.name){
+        queryobj[sessionobj.name]=sessionobj.value;
+        console.trace();
+        console.log('sessioning',queryobj,(new Date()).getTime());
+      }else{
+        for(var i in identity){
+          queryobj[i]=identity[i];
+        }
+        console.log('initiating',queryobj);
+      }
       timeout = 1;
       var worker = function(){
-        //console.log('getting');
-        $http.get(url+command+querystring).
+        //$http.get(url+command+querystring).
+        $http.get( url+command, {params:queryobj} ).
         success(function(data){
           for(var i in data[0]){
-            sessionname = i;
-            sessionvalue = data[0][i];
+            sessionobj.name = i;
+            sessionobj.value = data[0][i];
           }
           //console.log(sessionname,sessionvalue);
+          data[1]&&data[1][0]&&console.log(data[1][0][2],(new Date()).getTime());
           for(var i in data[1]){
             datacopy.commit(data[1][i]);
           }
           //console.log(datacopy.value());
-          setTimeout(cb,0);
+          setTimeout(cb,10000);
         }).
         error(function(){
           attempts++;
@@ -59,6 +63,7 @@ angular.
   factory('go',function(transfer){
     return function(){
       var cb = function(){transfer('',{},cb);};
+      console.log('go');
       cb();
     };
   }).
