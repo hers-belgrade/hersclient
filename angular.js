@@ -21,8 +21,8 @@ angular.
       var attempts = 0;
       if(sessionobj.name){
         queryobj[sessionobj.name]=sessionobj.value;
-        console.trace();
-        console.log('sessioning',queryobj,(new Date()).getTime());
+        //console.trace();
+        //console.log('sessioning',queryobj,(new Date()).getTime());
       }else{
         for(var i in identity){
           queryobj[i]=identity[i];
@@ -30,38 +30,48 @@ angular.
         console.log('initiating',queryobj);
       }
       timeout = 1;
-      var worker = function(){
-        //$http.get(url+command+querystring).
-        $http.get( url+command, {params:queryobj} ).
-        success(function(data){
-          for(var i in data[0]){
-            sessionobj.name = i;
-            sessionobj.value = data[0][i];
+      var worker = (function(_cb){
+        var cb = _cb;
+        var _wrk = function(){
+          //$http.get(url+command+querystring).
+          if(command&&(command[0]!=='/')){
+            command = '/'+command;
           }
-          //console.log(sessionname,sessionvalue);
-          data[1]&&data[1][0]&&console.log(data[1][0][2],(new Date()).getTime());
-          for(var i in data[1]){
-            datacopy.commit(data[1][i]);
-          }
-          //console.log(datacopy.value());
-          setTimeout(cb,10000);
-        }).
-        error(function(){
-          attempts++;
-          if(attempts>maxattemptspertimeout){
-            attempts=0;
-            if(timeout<maxtimeout){
-              timeout++;
+          $http.get( url+command, {params:queryobj} ).
+          success(function(data){
+            //console.log('response for',command,data,data[0]);
+            for(var i in data[0]){
+              sessionobj.name = i;
+              sessionobj.value = data[0][i];
             }
-          }
-          setTimeout(worker,timeout*1000);
-        });
-      };
+            //console.log(sessionname,sessionvalue);
+            //data[1]&&data[1][0]&&console.log(data[1][0][2],(new Date()).getTime());
+            for(var i in data[1]){
+              datacopy.commit(data[1][i]);
+            }
+            console.log(datacopy.value());
+            cb(data.errorcode,data.errorparams,data.errormessage);
+          }).
+          error(function(){
+            attempts++;
+            if(attempts>maxattemptspertimeout){
+              attempts=0;
+              if(timeout<maxtimeout){
+                timeout++;
+              }
+            }
+            setTimeout(_wrk,timeout*1000);
+          });
+        };
+        return _wrk;
+      })(cb);
       worker();
     };
   }).
   factory('go',function(transfer){
     return function(){
+      //transfer('',{},function(){});
+      //return;
       var cb = function(){transfer('',{},cb);};
       console.log('go');
       cb();
@@ -80,7 +90,7 @@ angular.
 
 
 
-function SystemCtrl($scope,datacopy,go){
+function SystemCtrl($scope,datacopy){
   $scope.memoryusage=0;
   $scope.memoryavailable=0;
   listenToCollectionField($scope,datacopy,'memoryusage',{setter:function(val){

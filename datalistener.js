@@ -96,10 +96,11 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
   function trytogo(){
     for(var i in fnh){
       if(typeof ch[i] === 'undefined'){
+        //console.log('could not go because',i,'is undefined');
         return false;
       }
     }
-    console.log('will go because',ch,'is ok with',fnh);
+    //console.log('will go because',ch,'is ok with',fnh);
     sf(ch);
   };
   function set(fieldname,fieldval){
@@ -128,6 +129,8 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
       },deactivator:function(entity){
         _unset(index);
       },setter:function(newval,oldval){
+        _set(index,newval);
+        //console.log('trying to go with',newval);
         trytogo();
       }}));
     })(ret,fn);
