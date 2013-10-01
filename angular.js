@@ -72,3 +72,29 @@ angular.
       //console.log('listen');
     };
   });
+
+
+
+function SystemCtrl($scope,datacopy,go){
+  $scope.memoryusage=0;
+  $scope.memoryavailable=0;
+  listenToCollectionField($scope,datacopy,'memoryusage',{setter:function(val){
+    this.memoryusage=val;
+  }});
+  listenToCollectionField($scope,datacopy,'memoryavailable',{setter:function(val){
+    this.memoryavailable=val;
+  }});
+};
+function ConsumerCtrl($scope,datacopy){
+  $scope.consumercount=0;
+  listenToCollectionField($scope,datacopy,'consumercount',{setter:function(val){
+    this.consumercount=val;
+  }});
+};
+function DataSnifferCtrl($scope,datacopy){
+  $scope.dataDump = '';
+  datacopy.txnEnds.attach(function(){
+    $scope.dataDump = datacopy.value();
+  });
+};
+
