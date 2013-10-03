@@ -27,7 +27,7 @@ angular.
         for(var i in identity){
           queryobj[i]=identity[i];
         }
-        console.log('initiating',queryobj);
+        //console.log('initiating',queryobj);
       }
       timeout = 1;
       var worker = (function(_cb){
@@ -49,8 +49,8 @@ angular.
             for(var i in data[1]){
               datacopy.commit(data[1][i]);
             }
-            console.log(datacopy.value());
-            cb(data.errorcode,data.errorparams,data.errormessage);
+            //console.log(datacopy.value());
+            (typeof cb === 'function') && cb(data.errorcode,data.errorparams,data.errormessage);
           }).
           error(function(){
             attempts++;
