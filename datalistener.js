@@ -117,23 +117,20 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
     delete ch[fieldname];
   };
   for(var i in fieldnamearry){
-    var fn = fieldnamearry[i];
-    fnh[fn] = 1;
+    fnh[fieldnamearry[i]] = 1;
+  }
+  for(var i in fieldnamearry){
     (function(_listeners,index){
       var listeners = _listeners;
       var _ch = ch;
       var _set = set;
       var _unset = unset;
-      listeners.add(listenToCollectionField(null,_coll,index,{activator:function(entity){
-        _set(index,entity.value());
+      listeners.add(listenToCollectionField(null,_coll,index,{setter:function(newval,oldval){
+        _set(index,newval);
       },deactivator:function(entity){
         _unset(index);
-      },setter:function(newval,oldval){
-        _set(index,newval);
-        //console.log('trying to go with',newval);
-        trytogo();
       }}));
-    })(ret,fn);
+    })(ret,fieldnamearry[i]);
   }
 	return ret;
 };
