@@ -129,11 +129,14 @@ function Collection (){
     }
   };
 
-  this.reset = function(){
-    for(var i in data){
-      this.remove(i);
-    }
-  }
+  this.reset = (function(_t,_data){
+    var t = _t,data=_data;
+    return function(){
+      for(var i in data){
+        t.remove(i);
+      }
+    };
+  })(this,data);
 
   this.start = function(txnalias){
     txnBegins.fire(txnalias);
@@ -150,20 +153,27 @@ function Collection (){
     txnEnds.fire(txnalias);
   };
 
-  this.destroy = function(){
-    for(var i in data){
-      data[i].destroy();
-      delete data[i];
-      elementRemoved.fire(i);
-    }
-    data = undefined;
-    destroyed.fire(this);
-    elementAdded.destruct();
-    elementRemoved.destruct();
-    txnBegins.destruct();
-    txnEnds.destruct();
-    destroyed.destruct();
-  };
+  this.destroy = (function(_t,_data){
+    var t = _t;
+    var data = _data;
+    return function(){
+      for(var i in data){
+        data[i].destroy();
+        delete data[i];
+        elementRemoved.fire(i);
+      }
+      data = undefined;
+      destroyed.fire(t);
+      elementAdded.destruct();
+      elementRemoved.destruct();
+      txnBegins.destruct();
+      txnEnds.destruct();
+      destroyed.destruct();
+      for(var i in t){
+        delete t[i];
+      }
+    };
+  })(this,data);
 
 	this.commit = function (txn) {
 		if (txn.length < 2) {

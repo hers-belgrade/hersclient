@@ -13,17 +13,33 @@ function dataFuncInvoker(selfunc,func){
 };
 
 function Listener(){
-  this.attached = [];
+  this.attached = {};
+  this.attachedAnonymously = [];
 };
-Listener.prototype.add = function(source,listener){
-  this.attached.push({source:source,hook:source.attach(listener)});
+Listener.prototype.add = function(source,listener,listeneralias){
+  var listenobj = {source:source,hook:source.attach(listener)};
+  if(!listeneralias){
+    this.attachedAnonymously.push(listenobj);
+  }else{
+    var a = this.attached[listeneralias];
+    if(a){
+      a.source.detach(a.hook);
+    }
+    this.attached[listeneralias] = listenobj;
+  }
 };
 Listener.prototype.release = function(){
-  for(var i in this.attached){
-    var a = this.attached[i];
-    a.source.detach(a.hook);
+  var t = this;
+  function clear(arryname,finalarry){
+    var target = t[arryname];
+    for(var i in target){
+      var a = target[i];
+      a.source.detach(a.hook);
+    }
+    t[arryname]= finalarry;
   }
-  this.attached = [];
+  clear('attached',{});
+  clear('attachedAnonymously',[]);
 };
 
 function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
@@ -47,7 +63,7 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
         }
       }
     };
-  })(ret,fieldname));
+  })(ret,fieldname),'elementAdded');
   ret.add(collection.elementRemoved,(function(fname){
     var fn = fname;
     return function(name,entity){
@@ -56,7 +72,7 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
         deact(entity);
       }
     }
-  })(fieldname));
+  })(fieldname),'elementRemoved');
   var e = collection.element(fieldname);
   if(e){
     act(e);
@@ -64,7 +80,7 @@ function listenToCollectionField(sel_fn_or_obj,collection,fieldname,behavior){
       sf(e.value());
       ret.add(e.changed,function(oldval,newval){sf(newval,oldval);});
     }
-    ret.add(e.destroyed,deact);
+    ret.add(e.destroyed,deact,'elementDestroyed');
   }
   return ret;
 };

@@ -10,7 +10,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
   var sidname = '';
   var old_sidname = '';
   var sid = '';
-  var stop = false;
+  var shouldrun = true;
   var cbm = cb_map || {};
   var func_call_error = cbm.func_call_error_cb ? cbm.func_call_error_cb : function(errcode,errparams,errmess){/*console.log('FUNCTION CALL ERROR',errcode,errmess);*/};
 
@@ -32,7 +32,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
   }
 
 	function check() {
-    if(stop){return;}
+    if(!shouldrun){return;}
     //setTimeout(function(){
       Request (schema, address, port, '/', method, makeidobj(), resphandler, errhandler);
     //},2000);
@@ -41,6 +41,9 @@ HERSClient = function (_data,url,_id_params,cb_map) {
   resphandler = function(resp) {
     if(!(resp && (typeof resp === 'object') && (resp instanceof Array))){
       console.log('oops');
+      return;
+    }
+    if(!data){
       return;
     }
     var sobj = resp.shift();
@@ -62,7 +65,9 @@ HERSClient = function (_data,url,_id_params,cb_map) {
     var txnl = txn.length;
     for(var i=0; i<txnl; i++){
       try{
-        data.commit(txn[i]);
+        if(data){
+          data.commit(txn[i]);
+        }
       }
       catch(e){
         console.log(id_params.name,e);
@@ -106,8 +111,29 @@ HERSClient = function (_data,url,_id_params,cb_map) {
 		Request (schema, address, port, command, method, po,fch,errhandler); //response callback is irrelevant until proven otherwise
 	}
 
-  this.go = function(){check();};
-  this.stop = function(){stop=true;}
+  this.destroy = (function(_t){
+    var t = _t;
+    return function(){
+      address=undefined;
+      port=undefined;
+      schema=undefined;
+      id_params=undefined;
+      sidname=undefined;
+      old_sidname=undefined;
+      sid=undefined;
+      shouldrun=undefined;
+      cbm=undefined;
+      func_call_error=undefined;
+      data.reset();
+      data=undefined;
+      for(var i in t){
+        delete t[i];
+      }
+    };
+  })(this);
+
+  this.go = function(){shouldrun=true;check();};
+  this.stop = function(){shouldrun=false;}
   this.data = data;
 }
 
