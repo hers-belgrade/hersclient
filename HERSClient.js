@@ -70,7 +70,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
         }
       }
       catch(e){
-        console.log(id_params.name,e);
+        console.log(id_params ? id_params.name : 'destroyed client',e);
       }
     }
     check();
@@ -92,7 +92,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
 
   function func_call_handler(obj){
     if((typeof obj === 'object')&&(obj.errorcode)){
-      func_call_error(obj.errorcode,obj.errparams,obj.errormessage);
+      func_call_error && func_call_error(obj.errorcode,obj.errparams,obj.errormessage);
     }
   }
 
