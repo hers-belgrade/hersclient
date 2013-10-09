@@ -41,7 +41,18 @@ angular.
           success(function(data){
             //console.log('response for',command,data,data[0]);
             for(var i in data[0]){
+              if(sessionobj.name!==i){
+                datacopy.reset();
+                if(sessionobj.name){
+                  sessionobj = {};
+                  (typeof cb === 'function') && cb(data.errorcode,data.errorparams,data.errormessage);
+                  return;
+                }
+              }
               sessionobj.name = i;
+              if(sessionobj.value!==data[0][i]){
+                datacopy.reset();
+              }
               sessionobj.value = data[0][i];
             }
             //console.log(sessionname,sessionvalue);
