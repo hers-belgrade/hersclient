@@ -19,7 +19,7 @@ Request = function (schema, address, port, command, rq_method, data, cb, errcb) 
 	}
 
 	var setup = {
-		url : url,
+		url : encodeURI(url),
 		method : rq_method
 	}
 
