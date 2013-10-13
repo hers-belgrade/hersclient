@@ -153,5 +153,6 @@ function listenToDataFields(sel_fn_or_obj,collection,fieldnamearry,cb){
 
 module.exports = {
   listenToCollectionField:listenToCollectionField,
-  listenToDataFields:listenToDataFields
+  listenToDataFields:listenToDataFields,
+  Listener:Listener
 };

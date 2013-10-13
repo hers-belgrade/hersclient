@@ -5,10 +5,9 @@ HERSClient = function (_data,url,_id_params,cb_map) {
 	var address = url.address || 'localhost';
 	var port = url.port || 80;
 	var schema = url.schema || 'http';
-	var method = url.method || 'POST';
+	var method = url.method || 'GET';
 	var id_params = _id_params || {name:'', roles:[]};
   var sidname = '';
-  var old_sidname = '';
   var sid = '';
   var shouldrun = true;
   var cbm = cb_map || {};
@@ -17,12 +16,14 @@ HERSClient = function (_data,url,_id_params,cb_map) {
 	var error_to = undefined;
 	var error_cnt = 0;
 	var error_reconnect_sec = 1;
+  var diecb;
 
   var resphandler,errhandler;
 
   function makeidobj(){
 		var iddata = {};
 		if (!sidname) {
+      console.log(id_params.name,'identifying');
 			iddata.name = id_params.name;
 			iddata.roles= id_params.roles;
 		}else{
@@ -32,6 +33,10 @@ HERSClient = function (_data,url,_id_params,cb_map) {
   }
 
 	function check() {
+    if(typeof diecb==='function'){
+      diecb();
+      return;
+    }
     if(!shouldrun){return;}
     //setTimeout(function(){
       Request (schema, address, port, '/', method, makeidobj(), resphandler, errhandler);
@@ -47,39 +52,40 @@ HERSClient = function (_data,url,_id_params,cb_map) {
       return;
     }
     var sobj = resp.shift();
-    old_sidname = sidname;
+    var old_sidname = sidname;
+    var old_sid = sid;
     for(var i in sobj){
       sidname = i;
       sid = sobj[i];
     }
     error_cnt = 0;
     error_reconnect_sec = 1;
-    if (old_sidname && sidname != old_sidname) {
-      try{
-        data.reset();
-      }catch(e){}
+    if ((old_sidname && (sidname != old_sidname))||(old_sid && (sid != old_sid))) {
+      console.log(id_params.name,'resetting');
+      data.reset();
       if(id_params.name){
         sid = '';
         sidname = '';
       }
-    }
-    var txn = resp.shift();
-    var txnl = txn.length;
-    for(var i=0; i<txnl; i++){
-      try{
-        if(data){
-          data.commit(txn[i]);
+    }else{
+      var txn = resp.shift();
+      var txnl = txn.length;
+      for(var i=0; i<txnl; i++){
+        try{
+          if(data){
+            data.commit(txn[i]);
+          }
         }
-      }
-      catch(e){
-        console.log(id_params ? id_params.name : 'destroyed client',e);
+        catch(e){
+          console.log(id_params ? id_params.name : 'destroyed client',e);
+        }
       }
     }
     check();
   };
 
   errhandler = function() {
-    //console.log('comm error',arguments);
+    console.log('comm error',arguments);
     error_cnt ++;
     if (error_cnt >= 5) {
       error_cnt = 0;
@@ -115,22 +121,29 @@ HERSClient = function (_data,url,_id_params,cb_map) {
 
   this.destroy = (function(_t){
     var t = _t;
-    return function(){
-      address=undefined;
-      port=undefined;
-      schema=undefined;
-      id_params=undefined;
-      sidname=undefined;
-      old_sidname=undefined;
-      sid=undefined;
-      shouldrun=undefined;
-      cbm=undefined;
-      func_call_error=undefined;
-      data.reset();
-      data=undefined;
-      for(var i in t){
-        delete t[i];
-      }
+    return function(cb){
+      diecb = function(){
+        address=undefined;
+        port=undefined;
+        schema=undefined;
+        id_params=undefined;
+        sidname=undefined;
+        sid=undefined;
+        shouldrun=undefined;
+        cbm=undefined;
+        func_call_error=undefined;
+        data.reset();
+        data=undefined;
+        for(var i in t){
+          delete t[i];
+        }
+        if(typeof cb==='function'){
+          cb();
+        }else{
+          console.trace();
+          console.log('client destroying self without cb');
+        }
+      };
     };
   })(this);
 

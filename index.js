@@ -11,5 +11,6 @@ module.exports = {
   },
   Collection : dc.Collection,
   listenToCollectionField : pl.listenToCollectionField,
-  listenToDataFields: pl.listenToDataFields
+  listenToDataFields: pl.listenToDataFields,
+  Listener: pl.Listener
 };
