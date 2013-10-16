@@ -60,7 +60,7 @@ HERSClient = function (_data,url,_id_params,cb_map) {
     }
     error_cnt = 0;
     error_reconnect_sec = 1;
-    if ((old_sidname && (sidname != old_sidname))||(old_sid && (sid != old_sid))) {
+    if ((!sobj)||(old_sidname && (sidname != old_sidname))||(old_sid && (sid != old_sid))) {
       console.log(id_params.name,'resetting');
       data.reset();
       if(id_params.name){
@@ -69,16 +69,20 @@ HERSClient = function (_data,url,_id_params,cb_map) {
       }
     }else{
       var txn = resp.shift();
-      var txnl = txn.length;
-      for(var i=0; i<txnl; i++){
-        try{
-          if(data){
-            data.commit(txn[i]);
+      if(txn){
+        var txnl = txn.length;
+        for(var i=0; i<txnl; i++){
+          try{
+            if(data){
+              data.commit(txn[i]);
+            }
+          }
+          catch(e){
+            console.log(id_params ? id_params.name : 'destroyed client',e);
           }
         }
-        catch(e){
-          console.log(id_params ? id_params.name : 'destroyed client',e);
-        }
+      }else{
+        console.log(sobj);
       }
     }
     check();

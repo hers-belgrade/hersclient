@@ -204,6 +204,7 @@ Collection.prototype.perform_set = function (op, d) {
     var pe = path.shift();
     c_parent = c_parent.element(pe);
     if (!c_parent) {
+      return;
       throw op+" is an invalid path on "+JSON.stringify(this.value())+' in setting '+pe;
     }
     affectedpath+=(pe+'/');
@@ -224,6 +225,7 @@ Collection.prototype.perform_remove = function (p) {
     name = p[level];
     prnt = prnt.element(name);
     if(!prnt){
+      return;
       throw p+' is an invalid path on '+JSON.stringify(this.value())+' in removing '+name;
     }
     affectedpath+=(name+'/');
