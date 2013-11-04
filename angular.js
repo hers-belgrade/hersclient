@@ -5,6 +5,7 @@ angular.
   constant('maxtimeout',3).
   value('sessionobj',{}).
   value('identity',{}).
+  value('livesession',{}).
   factory('querize', function(){
     return function(querystring,queryobj){
       for(var i in queryobj){
@@ -16,7 +17,7 @@ angular.
       return querystring;
     };
   }).
-  factory('transfer', function($http,url,datacopy,identity,sessionobj,maxattemptspertimeout,maxtimeout){
+  factory('transfer', function($http,url,datacopy,identity,sessionobj,livesession,maxattemptspertimeout,maxtimeout){
     return function(command,queryobj,cb){
       var attempts = 0;
       if(sessionobj.name){
@@ -41,15 +42,21 @@ angular.
           success(function(data){
             //console.log('response for',command,data,data[0]);
             for(var i in data[0]){
+              var serversessionname = data[0][i];
+              if(livesession[serversessionname]==='stop'){
+                console.log('live session',serversessionname,'has to die now');
+                return;
+              }
+              livesession[serversessionname] = 'go';
               sessionobj.name = i;
-              sessionobj.value = data[0][i];
+              sessionobj.value = serversessionname;
             }
             //console.log(sessionname,sessionvalue);
             //data[1]&&data[1][0]&&console.log(data[1][0][2],(new Date()).getTime());
             for(var i in data[1]){
               datacopy.commit(data[1][i]);
             }
-            console.log(datacopy.value());
+            //console.log(datacopy.value());
             cb(data.errorcode,data.errorparams,data.errormessage);
           }).
           error(function(){
@@ -68,10 +75,16 @@ angular.
       worker();
     };
   }).
-  factory('go',function(transfer){
+  factory('go',function(transfer,sessionobj,livesession){
     return function(){
       //transfer('',{},function(){});
       //return;
+      for(var i in livesession){
+        livesession[i] = 'stop';
+      }
+      for(var i in sessionobj){
+        delete sessionobj[i];
+      }
       var cb = function(){transfer('',{},cb);};
       console.log('go');
       cb();
